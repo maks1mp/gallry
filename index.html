@@ -48,5 +48,25 @@
     </div>
 
     <script src="./slider.js"></script>
+    <script>
+        const galleryContainer = document.querySelector('.gallery-container');
+        const galleryControlsContainer = document.querySelector('.gallery-controls');
+        const galleryItems = document.querySelectorAll('.gallery-item');
+
+        const carousel = new Carousel(galleryContainer, galleryItems);
+
+        carousel.setControls();
+        carousel.setInitialState();
+        carousel.useControls();
+
+        carousel.addAutoSlide({
+            direction: 'left', /* left | right */
+            stopTime: 3000, /* delay before next scroll */
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(() => document.body.classList.remove('preload'), 100);
+        });
+    </script>
 </body>
 </html>

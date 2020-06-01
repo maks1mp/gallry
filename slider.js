@@ -1,22 +1,31 @@
-const galleryContainer = document.querySelector('.gallery-container');
-const galleryControlsContainer = document.querySelector('.gallery-controls');
-const galleryControls = ['previous', 'next'];
-const galleryItems = document.querySelectorAll('.gallery-item');
-
 class Carousel {
-  constructor(container, items, controls) {
+  static classes = {
+    first: 'gallery-item-first',
+    previous: 'gallery-item-previous',
+    selected: 'gallery-item-selected',
+    next: 'gallery-item-next',
+    last: 'gallery-item-last',
+    controls: {
+      prev: 'gallery-controls-previous',
+      next: 'gallery-controls-next'
+    },
+    createClass: str => `.${str}`
+  }
+
+  constructor(container, items, controls = ['previous', 'next']) {
     this.carouselContainer = container;
     this.carouselControls = controls;
     this.carouselArray = [...items];
+    this.slideTimer = null;
   }
 
   // Assign initial css classes for gallery and nav items
   setInitialState() {
-    this.carouselArray[0].classList.add('gallery-item-first');
-    this.carouselArray[1].classList.add('gallery-item-previous');
-    this.carouselArray[2].classList.add('gallery-item-selected');
-    this.carouselArray[3].classList.add('gallery-item-next');
-    this.carouselArray[4].classList.add('gallery-item-last');
+    this.carouselArray[0].classList.add(Carousel.classes.first);
+    this.carouselArray[1].classList.add(Carousel.classes.previous);
+    this.carouselArray[2].classList.add(Carousel.classes.selected);
+    this.carouselArray[3].classList.add(Carousel.classes.next);
+    this.carouselArray[4].classList.add(Carousel.classes.last);
 
     // document.querySelector('.gallery-nav').childNodes[0].className = 'gallery-nav-item gallery-item-first';
     // document.querySelector('.gallery-nav').childNodes[1].className = 'gallery-nav-item gallery-item-previous';
@@ -26,55 +35,60 @@ class Carousel {
   }
 
   // Update the order state of the carousel with css classes
-  setCurrentState(target, selected, previous, next, first, last) {
+  setCurrentState(target) {
+    const selected = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.selected));
+    const previous = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.previous));
+    const next = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.next));
+    const first = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.first));
+    const last = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.last));
 
     selected.forEach(el => {
-      el.classList.remove('gallery-item-selected');
+      el.classList.remove(Carousel.classes.selected);
 
-      if (target.className == 'gallery-controls-previous') {
-        el.classList.add('gallery-item-next');
+      if (target.className == Carousel.classes.controls.prev) {
+        el.classList.add(Carousel.classes.next);
       } else {
-        el.classList.add('gallery-item-previous');
+        el.classList.add(Carousel.classes.previous);
       }
     });
 
     previous.forEach(el => {
-      el.classList.remove('gallery-item-previous');
+      el.classList.remove(Carousel.classes.previous);
 
-      if (target.className == 'gallery-controls-previous') {
-        el.classList.add('gallery-item-selected');
+      if (target.className == Carousel.classes.controls.prev) {
+        el.classList.add(Carousel.classes.selected);
       } else {
-        el.classList.add('gallery-item-first');
+        el.classList.add(Carousel.classes.first);
       }
     });
 
     next.forEach(el => {
-      el.classList.remove('gallery-item-next');
+      el.classList.remove(Carousel.classes.next);
 
-      if (target.className == 'gallery-controls-previous') {
-        el.classList.add('gallery-item-last');
+      if (target.className == Carousel.classes.controls.prev) {
+        el.classList.add(Carousel.classes.last);
       } else {
-        el.classList.add('gallery-item-selected');
+        el.classList.add(Carousel.classes.selected);
       }
     });
 
     first.forEach(el => {
-      el.classList.remove('gallery-item-first');
+      el.classList.remove(Carousel.classes.first);
 
-      if (target.className == 'gallery-controls-previous') {
-        el.classList.add('gallery-item-previous');
+      if (target.className == Carousel.classes.controls.prev) {
+        el.classList.add(Carousel.classes.previous);
       } else {
-        el.classList.add('gallery-item-last');
+        el.classList.add(Carousel.classes.last);
       }
     });
 
     last.forEach(el => {
-      el.classList.remove('gallery-item-last');
+      el.classList.remove(Carousel.classes.last);
 
-      if (target.className == 'gallery-controls-previous') {
-        el.classList.add('gallery-item-first');
+      if (target.className == Carousel.classes.controls.prev) {
+        el.classList.add(Carousel.classes.first);
       } else {
-        el.classList.add('gallery-item-next');
+        el.classList.add(Carousel.classes.next);
       }
     });
   }
@@ -97,35 +111,40 @@ class Carousel {
 
     !!galleryControlsContainer.childNodes[0] ? galleryControlsContainer.childNodes[0].innerHTML = `<i class="fa fa-chevron-left" aria-hidden="true"></i>` : null;
     !!galleryControlsContainer.childNodes[1] ? galleryControlsContainer.childNodes[1].innerHTML = `<i class="fa fa-chevron-right" aria-hidden="true"></i>` : null;
+
+    this.galleryControlsButtons = [
+      galleryControlsContainer.childNodes[0],
+      galleryControlsContainer.childNodes[1]
+    ].filter(Boolean);
   }
  
   // Add a click event listener to trigger setCurrentState method to rearrange carousel
   useControls() {
-    const triggers = [...galleryControlsContainer.childNodes];
+    const triggers = [...this.galleryControlsButtons];
 
     triggers.forEach(control => {
       control.addEventListener('click', () => {
         const target = control;
-        const selectedItem = document.querySelectorAll('.gallery-item-selected');
-        const previousSelectedItem = document.querySelectorAll('.gallery-item-previous');
-        const nextSelectedItem = document.querySelectorAll('.gallery-item-next');
-        const firstCarouselItem = document.querySelectorAll('.gallery-item-first');
-        const lastCarouselItem = document.querySelectorAll('.gallery-item-last');
 
-        this.setCurrentState(target, selectedItem, previousSelectedItem, nextSelectedItem, firstCarouselItem, lastCarouselItem);
+        if (this.slideTimer) {
+          clearTimeout(this.slideTimer);
+          this.slideTimer = null;
+          this.addAutoSlide();
+        }
+        
+        this.setCurrentState(target);
       });
     });
   }
+
+  addAutoSlide({stopTime = this.stopTime, direction = this.direction} = {}) {
+    this.stopTime = stopTime;
+    this.direction = direction;
+
+    this.slideTimer = setInterval(() => {
+      const [left, right] = this.galleryControlsButtons;
+
+      this.setCurrentState(direction === 'left' ? left : right);
+    }, stopTime);
+  }
 }
-
-const exampleCarousel = new Carousel(galleryContainer, galleryItems, galleryControls);
-
-exampleCarousel.setControls();
-// exampleCarousel.setNav();
-exampleCarousel.setInitialState();
-exampleCarousel.useControls();
-
-window.addEventListener('load', () => {
-    setTimeout(() => document.body.classList.remove('preload'), 100);
-    
-});
