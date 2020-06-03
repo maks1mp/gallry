@@ -17,6 +17,24 @@ class Carousel {
     this.carouselControls = controls;
     this.carouselArray = [...items];
     this.slideTimer = null;
+
+    this.carouselArray
+      .filter(item => !!item.querySelector('.gallery-item-popup'))
+      .forEach(item => {
+        item.addEventListener('click', event => {
+          const notPopup = !(event.target.classList.contains('gallery-item-popup') || event.target.closest('.gallery-item-popup'));
+          const notReadmore = !(event.target.classList.contains('gallery-item-description') || event.target.closest('.gallery-item-description'));
+
+          if (notPopup && notReadmore) {
+            item.querySelector('.gallery-item-popup').classList.toggle('open');
+          }
+        });
+
+        item.querySelector('[data-action="close"]').addEventListener('click', e => {
+          e.preventDefault();
+          item.querySelector('.gallery-item-popup').classList.remove('open');
+        });
+      });
   }
 
   // Assign initial css classes for gallery and nav items
@@ -100,14 +118,14 @@ class Carousel {
     this.carouselArray.forEach(item => {
       const nav = galleryContainer.lastElementChild;
       nav.appendChild(document.createElement('li'));
-    }); 
+    });
   }
 
   // Construct the carousel controls
   setControls() {
     this.carouselControls.forEach(control => {
       galleryControlsContainer.appendChild(document.createElement('span')).className = `gallery-controls-${control}`;
-    }); 
+    });
 
     !!galleryControlsContainer.childNodes[0] ? galleryControlsContainer.childNodes[0].innerHTML = `<i class="fa fa-chevron-left" aria-hidden="true"></i>` : null;
     !!galleryControlsContainer.childNodes[1] ? galleryControlsContainer.childNodes[1].innerHTML = `<i class="fa fa-chevron-right" aria-hidden="true"></i>` : null;
@@ -117,7 +135,7 @@ class Carousel {
       galleryControlsContainer.childNodes[1]
     ].filter(Boolean);
   }
- 
+
   // Add a click event listener to trigger setCurrentState method to rearrange carousel
   useControls() {
     const triggers = [...this.galleryControlsButtons];
@@ -127,17 +145,25 @@ class Carousel {
         const target = control;
 
         if (this.slideTimer) {
-          clearTimeout(this.slideTimer);
-          this.slideTimer = null;
+          this.pauseAutoSlide();
           this.addAutoSlide();
         }
-        
+
+        Array.from(this.carouselContainer.querySelectorAll('.gallery-item-popup.open'))
+          .filter(Boolean)
+          .forEach(item => item.classList.remove('open'));
+
         this.setCurrentState(target);
       });
     });
   }
 
-  addAutoSlide({stopTime = this.stopTime, direction = this.direction} = {}) {
+  pauseAutoSlide() {
+    clearTimeout(this.slideTimer);
+    this.slideTimer = null;
+  }
+
+  addAutoSlide({ stopTime = this.stopTime, direction = this.direction } = {}) {
     this.stopTime = stopTime;
     this.direction = direction;
 

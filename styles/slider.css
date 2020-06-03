@@ -1,3 +1,11 @@
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 img {
     max-width: 600px;
 }
@@ -124,6 +132,7 @@ img {
 .gallery-controls span {
     display: block;
     font-size: 45px;
+    color: #000;
 }
 
 .gallery-nav {
@@ -162,12 +171,65 @@ img {
     left: 40px;
 }
 
-.gallery-item p {
-  font: 16px/1.2 sans-serif;
-  color: #ffffff;
-  margin: 0;
+.gallery-item-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: inherit;
+  display: flex;
+
+  max-height: 0;
+  overflow: hidden;
+  padding: 0;
 }
 
-.gallery-item p:not(:empty) {
+.gallery-item-selected .gallery-item-popup.open {
+  max-height: 100vh;
+  overflow: auto;
+}
+
+.gallery-item-popup-image {
+  flex: 40% 1 1;
+}
+
+.gallery-item-popup-content {
+  flex: 60% 1 1;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.gallery-item-popup-image {
+  padding: 20px 10px 20px 20px;
+}
+.gallery-item-popup-content {
+  padding: 20px 20px 20px 10px;
+}
+
+.gallery-item .text:not(:empty) {
   padding-top: 20px;
+}
+
+.gallery-item-popup-controls {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.gallery-btn {
+  cursor: pointer;
+  text-decoration: none;
+  background-color: #ff9901;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+}
+
+.gallery-btn-close {
+  border-color: #ff9901;
+  background-color: transparent;
+}
+
+.gallery-btn + .gallery-btn {
+  margin-left: 5px;
 }
