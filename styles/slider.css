@@ -203,8 +203,13 @@ img {
   display: none;
 }
 
-.gallery-item-dropdown .gallery-item-dropdown-text:not(:empty) {
-  padding-top: 20px;
+.gallery-item-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  padding: 0 20px 20px;
+  background-color: inherit;
 }
 
 .gallery-item-dropdown-expanded {
