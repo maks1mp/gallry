@@ -1,4 +1,6 @@
 class Carousel {
+  static $id = 0;
+
   static classes = {
     first: 'gallery-item-first',
     previous: 'gallery-item-previous',
@@ -17,101 +19,161 @@ class Carousel {
     this.carouselControls = controls;
     this.carouselArray = [...items];
     this.slideTimer = null;
+    this.state = 0;
+    this.setSliderVersion(this.carouselArray.length);
+    this.$id = ++Carousel.$id;
+    
+    this.carouselContainer.setAttribute('data-carousel-id', this.$id);
+    this.carouselArray.forEach((item, index) => {
+      item.setAttribute('data-slide-index', index);
 
-    this.carouselArray
-      .filter(item => !!item.querySelector('.gallery-item-popup'))
-      .forEach(item => {
-        item.addEventListener('click', event => {
-          const notPopup = !(event.target.classList.contains('gallery-item-popup') || event.target.closest('.gallery-item-popup'));
-          const notReadmore = !(event.target.classList.contains('gallery-item-description') || event.target.closest('.gallery-item-description'));
+      this.applyReadmore(`[data-carousel-id="${this.$id}"] [data-slide-index="${index}"] .gallery-item-dropdown-text`);
+    });
+    
+    this.setExpandLogic();
+  }
 
-          if (notPopup && notReadmore) {
-            item.querySelector('.gallery-item-popup').classList.toggle('open');
-          }
-        });
+  applyReadmore(target) {
+    window.applyReadmore({
+      target,
+      numOfWords: 10,
+    });
+  }
 
-        item.querySelector('[data-action="close"]').addEventListener('click', e => {
-          e.preventDefault();
-          item.querySelector('.gallery-item-popup').classList.remove('open');
-        });
+  setExpandLogic() {
+    this.carouselContainer.addEventListener('click', e => {
+      if (e.target.nodeName === 'A' && e.target.classList.contains('readmore-link')) {
+        const wrapper = '.gallery-item-image-wrapper';
+        const slide = e.target.closest(wrapper);
+        const expanded = slide.querySelector('.gallery-item-dropdown-expanded');
+
+        const text = slide.querySelector('.gallery-item-dropdown-text');
+        const content = slide.querySelector('.gallery-item-ads-text');
+
+        if (content) {
+          setTimeout(() => {
+            content.appendChild(text);
+
+            slide.querySelector('.gallery-item-dropdown').innerHTML = '';
+
+            expanded.classList.add('open');
+
+            this.pauseAutoSlide();
+
+            e.target.remove();
+          });
+        }
+      }
+
+      if (e.target.classList.contains('gallery-btn-close')) {
+        const wrapper = '.gallery-item-image-wrapper';
+        const slide = e.target.closest(wrapper);
+        const expanded = slide.querySelector('.gallery-item-dropdown-expanded');
+
+        expanded.classList.remove('open');
+
+        this.addAutoSlide();
+
+        const text = slide.querySelector('.gallery-item-ads-text .gallery-item-dropdown-text');
+        const content = slide.querySelector('.gallery-item-dropdown');
+
+        if (content) {
+          content.appendChild(text);
+
+          const gallerySlide = slide.closest('[data-slide-index]');
+          const slideId = gallerySlide.dataset.slideIndex;
+
+          this.applyReadmore(`[data-carousel-id="${this.$id}"] [data-slide-index="${slideId}"] .gallery-item-dropdown-text`);
+        }
+      }
+    });
+  }
+
+  setSliderVersion(numberOfElements) {
+    if (numberOfElements < 3 || numberOfElements === 4) {
+      throw new Error(`Please set 3 or more than 5 images! Current number of elements -> ${numberOfElements}`)
+    }
+
+    if (numberOfElements === 3) {
+      this.classesSequence = [Carousel.classes.previous, Carousel.classes.selected, Carousel.classes.next];
+    }
+
+    if (numberOfElements >= 5) {
+      this.classesSequence = [Carousel.classes.first, Carousel.classes.previous, Carousel.classes.selected, Carousel.classes.next, Carousel.classes.last];
+    }
+  }
+
+  slideIndexOf(element) {
+    return this.carouselArray.findIndex(el => el === element);
+  }
+
+  getElements(itemIndex) {
+    const prev = this.carouselArray[itemIndex - 1] || this.carouselArray[this.carouselArray.length - 1] || null;
+    const prevIndex = this.slideIndexOf(prev);
+    const first = this.carouselArray[prevIndex - 1] || this.carouselArray[this.carouselArray.length - 1];
+
+    const active = this.carouselArray[itemIndex] || null;
+
+    const next = this.carouselArray[itemIndex + 1] || this.carouselArray[0] || null;
+    const nextIndex = this.slideIndexOf(next);
+    const last = this.carouselArray[nextIndex + 1] || this.carouselArray[0] || null;
+
+    if (this.classesSequence.length === 3) {
+      return [prev, active, next];
+    }
+
+    if (this.classesSequence.length === 5) {
+      return [first, prev, active, next, last];
+    }
+  }
+
+  setState() {
+    const { classesSequence } = this;
+    const elements = this.getElements(this.state);
+
+    this.carouselArray.forEach(item => {
+      item.classList.add('d-none');
+
+      const closeBtn = item.querySelector('.gallery-btn-close');
+      const wrapper = item.querySelector('.gallery-item-dropdown-expanded.open');
+
+      wrapper && closeBtn && closeBtn.click();
+
+      classesSequence.forEach(clazz => {
+        item.classList.remove(clazz);
       });
-  }
-
-  // Assign initial css classes for gallery and nav items
-  setInitialState() {
-    this.carouselArray[0].classList.add(Carousel.classes.first);
-    this.carouselArray[1].classList.add(Carousel.classes.previous);
-    this.carouselArray[2].classList.add(Carousel.classes.selected);
-    this.carouselArray[3].classList.add(Carousel.classes.next);
-    this.carouselArray[4].classList.add(Carousel.classes.last);
-
-    // document.querySelector('.gallery-nav').childNodes[0].className = 'gallery-nav-item gallery-item-first';
-    // document.querySelector('.gallery-nav').childNodes[1].className = 'gallery-nav-item gallery-item-previous';
-    // document.querySelector('.gallery-nav').childNodes[2].className = 'gallery-nav-item gallery-item-selected';
-    // document.querySelector('.gallery-nav').childNodes[3].className = 'gallery-nav-item gallery-item-next';
-    // document.querySelector('.gallery-nav').childNodes[4].className = 'gallery-nav-item gallery-item-last';
-  }
-
-  // Update the order state of the carousel with css classes
-  setCurrentState(target) {
-    const selected = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.selected));
-    const previous = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.previous));
-    const next = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.next));
-    const first = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.first));
-    const last = document.querySelectorAll(Carousel.classes.createClass(Carousel.classes.last));
-
-    selected.forEach(el => {
-      el.classList.remove(Carousel.classes.selected);
-
-      if (target.className == Carousel.classes.controls.prev) {
-        el.classList.add(Carousel.classes.next);
-      } else {
-        el.classList.add(Carousel.classes.previous);
-      }
     });
 
-    previous.forEach(el => {
-      el.classList.remove(Carousel.classes.previous);
-
-      if (target.className == Carousel.classes.controls.prev) {
-        el.classList.add(Carousel.classes.selected);
-      } else {
-        el.classList.add(Carousel.classes.first);
-      }
-    });
-
-    next.forEach(el => {
-      el.classList.remove(Carousel.classes.next);
-
-      if (target.className == Carousel.classes.controls.prev) {
-        el.classList.add(Carousel.classes.last);
-      } else {
-        el.classList.add(Carousel.classes.selected);
-      }
-    });
-
-    first.forEach(el => {
-      el.classList.remove(Carousel.classes.first);
-
-      if (target.className == Carousel.classes.controls.prev) {
-        el.classList.add(Carousel.classes.previous);
-      } else {
-        el.classList.add(Carousel.classes.last);
-      }
-    });
-
-    last.forEach(el => {
-      el.classList.remove(Carousel.classes.last);
-
-      if (target.className == Carousel.classes.controls.prev) {
-        el.classList.add(Carousel.classes.first);
-      } else {
-        el.classList.add(Carousel.classes.next);
-      }
+    classesSequence.forEach((clazz, index) => {
+      elements[index].classList.add(clazz);
+      elements[index].classList.remove('d-none');
     });
   }
 
-  // Construct the carousel navigation
+  prevSlide() {
+    const current = this.state;
+
+    if (current > 0) {
+      this.state = current - 1;
+    } else {
+      this.state = this.carouselArray.length - 1;
+    }
+
+    this.setState(this.state);
+  }
+
+  nextSlide() {
+    const current = this.state;
+
+    if (current >= this.carouselArray.length - 1) {
+      this.state = 0;
+    } else {
+      this.state = current + 1;
+    }
+
+    this.setState(this.state);
+  }
+
   setNav() {
     galleryContainer.appendChild(document.createElement('ul')).className = 'gallery-nav';
 
@@ -121,10 +183,13 @@ class Carousel {
     });
   }
 
-  // Construct the carousel controls
   setControls() {
     this.carouselControls.forEach(control => {
-      galleryControlsContainer.appendChild(document.createElement('span')).className = `gallery-controls-${control}`;
+      const btn = document.createElement('span');
+
+      galleryControlsContainer.appendChild(btn).className = `gallery-controls-${control}`;
+
+      btn.setAttribute('data-direction', control);
     });
 
     !!galleryControlsContainer.childNodes[0] ? galleryControlsContainer.childNodes[0].innerHTML = `<i class="fa fa-chevron-left" aria-hidden="true"></i>` : null;
@@ -136,7 +201,6 @@ class Carousel {
     ].filter(Boolean);
   }
 
-  // Add a click event listener to trigger setCurrentState method to rearrange carousel
   useControls() {
     const triggers = [...this.galleryControlsButtons];
 
@@ -149,11 +213,7 @@ class Carousel {
           this.addAutoSlide();
         }
 
-        Array.from(this.carouselContainer.querySelectorAll('.gallery-item-popup.open'))
-          .filter(Boolean)
-          .forEach(item => item.classList.remove('open'));
-
-        this.setCurrentState(target);
+        target.dataset.direction === 'next' ? this.nextSlide() : this.prevSlide();
       });
     });
   }
@@ -170,7 +230,7 @@ class Carousel {
     this.slideTimer = setInterval(() => {
       const [left, right] = this.galleryControlsButtons;
 
-      this.setCurrentState(direction === 'left' ? left : right);
+      this.setState(direction === 'left' ? this.prevSlide() : this.nextSlide());
     }, stopTime);
   }
 }

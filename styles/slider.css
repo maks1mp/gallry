@@ -41,7 +41,8 @@ img {
   width: 520px;
 }
 
-.gallery-item * {
+.gallery-item,
+.gallery-item > * {
     transition: all 0.3s ease-in-out;
 }
 
@@ -52,6 +53,7 @@ img {
   transform: translateX(-50%);
   /* width: 300px; */
   z-index: 2;
+  display: block;
 }
 
 .gallery-item.gallery-item-selected .gallery-item-image-wrapper::before {
@@ -74,6 +76,7 @@ img {
   opacity: 1;
   /* width: 200px; */
   z-index: 1;
+  display: block;
 }
 
 .gallery-item.gallery-item-previous {
@@ -94,11 +97,13 @@ img {
 .gallery-item.gallery-item-first {
   left: 15%;
   transform: translateX(-50%);
+  display: block;
 }
 
 .gallery-item.gallery-item-last {
   left: 85%;
   transform: translateX(-50%);
+  display: block;
 }
 
 .gallery-item.gallery-item-first .gallery-item-image-wrapper,
@@ -171,50 +176,9 @@ img {
     left: 40px;
 }
 
-.gallery-item-popup {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: inherit;
+.gallery-item-ads-controls {
   display: flex;
-
-  max-height: 0;
-  overflow: hidden;
-  padding: 0;
-}
-
-.gallery-item-selected .gallery-item-popup.open {
-  max-height: 100vh;
-  overflow: auto;
-}
-
-.gallery-item-popup-image {
-  flex: 40% 1 1;
-}
-
-.gallery-item-popup-content {
-  flex: 60% 1 1;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.gallery-item-popup-image {
-  padding: 20px 10px 20px 20px;
-}
-.gallery-item-popup-content {
-  padding: 20px 20px 20px 10px;
-}
-
-.gallery-item .text:not(:empty) {
-  padding-top: 20px;
-}
-
-.gallery-item-popup-controls {
-  margin-top: 20px;
-  text-align: right;
+  flex-direction: row-reverse;
 }
 
 .gallery-btn {
@@ -223,6 +187,7 @@ img {
   background-color: #ff9901;
   padding: 6px 10px;
   border: 1px solid transparent;
+  color: #fff;
 }
 
 .gallery-btn-close {
@@ -231,5 +196,43 @@ img {
 }
 
 .gallery-btn + .gallery-btn {
-  margin-left: 5px;
+  margin-right: 10px;
+}
+
+.d-none {
+  display: none;
+}
+
+.gallery-item-dropdown .gallery-item-dropdown-text:not(:empty) {
+  padding-top: 20px;
+}
+
+.gallery-item-dropdown-expanded {
+  position: absolute;
+  background-color: inherit;
+  top: 100%;
+  left: 0;
+  right: 0;
+  transition: transform .3s ease;
+  transform: scaleY(0);
+  transform-origin: top center;
+  opacity: 0;
+}
+
+.gallery-item-dropdown-expanded.open {
+  padding: 0 20px 20px;
+  transform: scaleY(1);
+  opacity: 1;
+}
+
+.gallery-item-ads {
+  display: flex;
+}
+
+.gallery-item-ads-image {
+  padding-right: 20px;
+}
+
+.gallery-item-ads-text {
+  padding-bottom: 20px;
 }
